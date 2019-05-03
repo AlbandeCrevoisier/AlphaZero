@@ -10,34 +10,39 @@ goban_size = 9
 nfilters = 256
 nresiduals = 2 # 19 in the original paper.
 
-Input(goban_size, goban_size, 17)
+x = Input((goban_size, goban_size, 17))
 
 # Residual tower: a block followed by 19 residual blocks.
-Conv2D(nfilters, (3, 3), (1, 1))
-BatchNormalization()
-LeakyReLU()
+# First block
+x = Conv2D(nfilters, (3, 3), (1, 1))(x)
+x = BatchNormalization()(x)
+x = LeakyReLU()(x)
 
-Conv2D(nfilters, (3, 3), (1, 1))
-BatchNormalization()
-LeakyReLU()
-Conv2D(nfilters, (3, 3), (1, 1))
-BatchNormalization()
-add(input, intermediate_value)
-LeakyReLU()
+# Residual blocks
+for _ in range(nresiduals):
+    tmp = Conv2D(nfilters, (3, 3), (1, 1))(x)
+    tmp = BatchNormalization()(tmp)
+    tmp = LeakyReLU()(tmp)
+    tmp = Conv2D(nfilters, (3, 3), (1, 1))(tmp)
+    tmp = BatchNormalization()(tmp)
+    x = add(x, tmp)
+    x = LeakyReLU()(x)
 
 # Two heads.
 # Policy head
-Conv2D(2, (1, 1), (1, 1))
-BatchNormalization()
-LeakyReLU()
-Flatten()
-Dense(goban_size * goban_size + 1)
+p = Conv2D(2, (1, 1), (1, 1))(x)
+p = BatchNormalization()(p)
+p = LeakyReLU()(p)
+p = Flatten()(p)
+p = Dense(goban_size * goban_size + 1)(p)
 
 # Value head
-Conv2D(1, (1, 1), (1, 1))
-BatchNormalization()
-LeakyReLU()
-Flatten()
-Dense(nfilters)
-LeakyReLU()
-Dense(1, activation='tanh')
+v = Conv2D(1, (1, 1), (1, 1))(x)
+v = BatchNormalization()(v)
+v = LeakyReLU()(v)
+v = Flatten()(v)
+v = Dense(nfilters)(v)
+v = LeakyReLU()(v)
+v = Dense(1, activation='tanh')(v)
+
+model = Model(inputs=x, outputs=[p, v])
