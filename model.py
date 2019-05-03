@@ -1,7 +1,3 @@
-""" Reimplementation of Alpha Zero."""
-
-import numpy as np
-import matplotlib.pyplot as plt
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Flatten, Dense
 from tensorflow.keras.layers import Conv2D, BatchNormalization, LeakyReLU, add
