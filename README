@@ -1,0 +1,8 @@
+Reimplementation of DeepMind's Alpha Zero.
+
+To adapt to our resources, we downscaled the project as follows:
+- 5x5 goban
+- 256 filters instead of 256 (TO UPDATE WHEN CHANGED)
+- 2 residual blocks instead of 19
+
+We also simplified the job system, as we do not use it.
