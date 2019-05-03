@@ -6,3 +6,7 @@ To adapt to our resources, we downscaled the project as follows:
 - 2 residual blocks instead of 19
 
 We also simplified the job system, as we do not use it.
+
+Files:
+model.py - generate the keras model of the architecture
+mcts.py - Monte-Carlo Tree Search
