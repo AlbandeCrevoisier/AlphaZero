@@ -8,6 +8,10 @@ import math
 import numpy
 import tensorflow as tf
 from typing import List
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input, Flatten, Dense
+from tensorflow.keras.layers import Conv2D, BatchNormalization, LeakyReLU, add
+
 
 ##########################
 ####### Helpers ##########
@@ -15,7 +19,13 @@ from typing import List
 
 class AlphaZeroConfig(object):
 
-    def __init__(self):
+    def __init__(self, goban_size=19, num_filters=256, num_residuals=19):
+        ### Network
+        self.goban_size = goban_size
+        self.num_filters = num_filters
+        self.num_residuals = num_residuals
+
+
         ### Self-Play
         self.num_actors = 5000
 
@@ -131,12 +141,48 @@ class ReplayBuffer(object):
 
 class Network(object):
 
+    def __init__(self, config: AlphaZeroConfig):
+        goban_size = config.goban_size
+        num_filters = config.num_filters
+        num_residuals = config.num_residuals
+        x = Input((goban_size, goban_size, 17))
+        # First block
+        x = Conv2D(num_filters, (3, 3), (1, 1))(x)
+        x = BatchNormalization()(x)
+        x = LeakyReLU()(x)
+        # Residual blocks
+        for _ in range(num_residuals):
+            tmp = Conv2D(num_filters, (3, 3), (1, 1))(x)
+            tmp = BatchNormalization()(tmp)
+            tmp = LeakyReLU()(tmp)
+            tmp = Conv2D(num_filters, (3, 3), (1, 1))(tmp)
+            tmp = BatchNormalization()(tmp)
+            x = add(x, tmp)
+            x = LeakyReLU()(x)
+        # Value head
+        v = Conv2D(1, (1, 1), (1, 1))(x)
+        v = BatchNormalization()(v)
+        v = LeakyReLU()(v)
+        v = Flatten()(v)
+        v = Dense(num_filters)(v)
+        v = LeakyReLU()(v)
+        v = Dense(1, activation='tanh')(v)
+        # Policy head
+        p = Conv2D(2, (1, 1), (1, 1))(x)
+        p = BatchNormalization()(p)
+        p = LeakyReLU()(p)
+        p = Flatten()(p)
+        p = Dense(goban_size * goban_size + 1)(p)
+
+        self.model = Model(inputs=x, outputs=[v, p])
+
+
     def inference(self, image):
-        return (-1, {})    # Value, Policy
+        return self.model.predict([[image]])    # Value, Policy
 
     def get_weights(self):
         # Returns the weights of this network.
-        return []
+        return self.model.get_weights()
 
 
 class SharedStorage(object):
@@ -294,10 +340,10 @@ def add_exploration_noise(config: AlphaZeroConfig, node: Node):
 
 
 def train_network(config: AlphaZeroConfig, storage: SharedStorage,
-                                    replay_buffer: ReplayBuffer):
+                  replay_buffer: ReplayBuffer):
     network = Network()
     optimizer = tf.train.MomentumOptimizer(config.learning_rate_schedule,
-                                                                                 config.momentum)
+                                           config.momentum)
     for i in range(config.training_steps):
         if i % config.checkpoint_interval == 0:
             storage.save_network(i, network)
@@ -307,14 +353,13 @@ def train_network(config: AlphaZeroConfig, storage: SharedStorage,
 
 
 def update_weights(optimizer: tf.train.Optimizer, network: Network, batch,
-                                     weight_decay: float):
+                   weight_decay: float):
     loss = 0
     for image, (target_value, target_policy) in batch:
         value, policy_logits = network.inference(image)
-        loss += (
-                tf.losses.mean_squared_error(value, target_value) +
-                tf.nn.softmax_cross_entropy_with_logits(
-                        logits=policy_logits, labels=target_policy))
+        loss += (tf.losses.mean_squared_error(value, target_value) +
+                 tf.nn.softmax_cross_entropy_with_logits(
+                     logits=policy_logits, labels=target_policy))
 
     for weights in network.get_weights():
         loss += weight_decay * tf.nn.l2_loss(weights)
