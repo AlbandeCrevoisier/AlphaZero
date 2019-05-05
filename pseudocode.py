@@ -34,7 +34,7 @@ class AlphaZeroConfig(object):
         self.num_simulations = 800
 
         # Root prior exploration noise.
-        self.root_dirichlet_alpha = 0.03    # for chess, 0.03 for Go and 0.15 for shogi.
+        self.root_dirichlet_alpha = 0.03
         self.root_exploration_fraction = 0.25
 
         # UCB formula
@@ -77,7 +77,7 @@ class Game(object):
     def __init__(self, history=None):
         self.history = history or []
         self.child_visits = []
-        self.num_actions = 362    # action space size for chess; 11259 for shogi, 362 for Go
+        self.num_actions = 362
 
     def terminal(self):
         # Game specific termination rules.
@@ -100,8 +100,8 @@ class Game(object):
     def store_search_statistics(self, root):
         sum_visits = sum(child.visit_count for child in root.children.itervalues())
         self.child_visits.append([
-                root.children[a].visit_count / sum_visits if a in root.children else 0
-                for a in range(self.num_actions)
+            root.children[a].visit_count / sum_visits if a in root.children else 0
+            for a in range(self.num_actions)
         ])
 
     def make_image(self, state_index: int):
@@ -110,7 +110,7 @@ class Game(object):
 
     def make_target(self, state_index: int):
         return (self.terminal_value(state_index % 2),
-                        self.child_visits[state_index])
+                self.child_visits[state_index])
 
     def to_play(self):
         return len(self.history) % 2
@@ -132,9 +132,9 @@ class ReplayBuffer(object):
         # Sample uniformly across positions.
         move_sum = float(sum(len(g.history) for g in self.buffer))
         games = numpy.random.choice(
-                self.buffer,
-                size=self.batch_size,
-                p=[len(g.history) / move_sum for g in self.buffer])
+            self.buffer,
+            size=self.batch_size,
+            p=[len(g.history) / move_sum for g in self.buffer])
         game_pos = [(g, numpy.random.randint(len(g.history))) for g in games]
         return [(g.make_image(i), g.make_target(i)) for (g, i) in game_pos]
 
@@ -229,7 +229,7 @@ def alphazero(config: AlphaZeroConfig):
 # snapshot, produces a game and makes it available to the training job by
 # writing it to a shared replay buffer.
 def run_selfplay(config: AlphaZeroConfig, storage: SharedStorage,
-                                 replay_buffer: ReplayBuffer):
+                 replay_buffer: ReplayBuffer):
     while True:
         network = storage.latest_network()
         game = play_game(config, network)
@@ -274,7 +274,7 @@ def run_mcts(config: AlphaZeroConfig, game: Game, network: Network):
 
 def select_action(config: AlphaZeroConfig, game: Game, root: Node):
     visit_counts = [(child.visit_count, action)
-                                    for action, child in root.children.iteritems()]
+                    for action, child in root.children.iteritems()]
     if len(game.history) < config.num_sampling_moves:
         _, action = softmax_sample(visit_counts)
     else:
@@ -285,7 +285,7 @@ def select_action(config: AlphaZeroConfig, game: Game, root: Node):
 # Select the child with the highest UCB score.
 def select_child(config: AlphaZeroConfig, node: Node):
     _, action, child = max((ucb_score(config, node, child), action, child)
-                                                 for action, child in node.children.iteritems())
+                           for action, child in node.children.iteritems())
     return action, child
 
 
@@ -293,7 +293,7 @@ def select_child(config: AlphaZeroConfig, node: Node):
 # the prior.
 def ucb_score(config: AlphaZeroConfig, parent: Node, child: Node):
     pb_c = math.log((parent.visit_count + config.pb_c_base + 1) /
-                                    config.pb_c_base) + config.pb_c_init
+                    config.pb_c_base) + config.pb_c_init
     pb_c *= math.sqrt(parent.visit_count) / (child.visit_count + 1)
 
     prior_score = pb_c * child.prior
