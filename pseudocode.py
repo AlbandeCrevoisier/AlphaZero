@@ -98,9 +98,11 @@ class Game(object):
         self.history.append(action)
 
     def store_search_statistics(self, root):
-        sum_visits = sum(child.visit_count for child in root.children.itervalues())
+        sum_visits = sum(child.visit_count
+                         for child in root.children.itervalues())
         self.child_visits.append([
-            root.children[a].visit_count / sum_visits if a in root.children else 0
+            root.children[a].visit_count / sum_visits if a in root.children
+                                                      else 0
             for a in range(self.num_actions)
         ])
 
