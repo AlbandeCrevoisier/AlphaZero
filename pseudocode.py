@@ -99,7 +99,7 @@ class Game(object):
 
     def store_search_statistics(self, root):
         sum_visits = sum(child.visit_count
-                         for child in root.children.itervalues())
+                         for child in root.children.values())
         self.child_visits.append([
             root.children[a].visit_count / sum_visits if a in root.children
                                                       else 0
@@ -194,7 +194,7 @@ class SharedStorage(object):
 
     def latest_network(self) -> Network:
         if self._networks:
-            return self._networks[max(self._networks.iterkeys())]
+            return self._networks[max(self._networks.keys())]
         else:
             return make_uniform_network()    # policy -> uniform, value -> 0.5
 
