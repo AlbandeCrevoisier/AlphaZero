@@ -4,6 +4,7 @@ from tensorflow.keras.layers import Conv2D, BatchNormalization, LeakyReLU, add
 from tensorflow.keras.losses import mean_squared_error
 from tensorflow.nn import softmax_cross_entropy_with_logits_v2
 from tensorflow.keras.regularizers import l2
+from tensorflow.keras.optimizers import SGD
 
 
 def model(goban_size=19, nfilters=256, nresiduals=19, c=1e-4):
@@ -58,3 +59,9 @@ def loss(y_true, y_pred):
     l = mean_squared_error(y_true[1], y_pred[1])
     l += softmax_cross_entropy_with_logits_v2(y_true[0], y_pred[0])
     return l
+
+
+def train():
+    m = Model()
+    m.compile(loss=loss, optimizer=SGD(2e-2, 0.9))
+    m.fit()
