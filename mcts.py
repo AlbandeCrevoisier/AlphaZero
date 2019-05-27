@@ -1,5 +1,6 @@
 """Monte Carlo Tree Search: variant of the PUCT"""
-from math import log, sqrt
+from go import legal_actions
+from math import exp, log, sqrt
 
 
 class Node:
@@ -16,8 +17,18 @@ class Node:
         return self.tot_val / self.nvisits
 
 
-def mcts(config):
-    pass
+def make_children(node: Node, policy_logits, position):
+    policy = {a: exp(policy_logits[a]) for a in legal_actions(position)}
+    policy_sum = sum(policy.values())
+    for action, p in policy.items():
+        node.children[action] = Node(p / policy_sum)
+
+
+def ucb_score(config, parent: Node, child: Node):
+    c_base, c_init = config['c_base'], config['c_init']
+    c = log((1 + parent.nvisits + c_base) / c_base) + c_init
+    u = c * child.prior * sqrt(parent.nvisits) / (1 + child.nvisits)
+    return child.value() + u
 
 
 def select_child(config, node: Node):
@@ -26,8 +37,13 @@ def select_child(config, node: Node):
     return action, child
 
 
-def ucb_score(config, parent: Node, child: Node):
-    c_base, c_init = config['c_base'], config['c_init']
-    c = log((1 + parent.nvisits + c_base) / c_base) + c_init
-    u = c * child.prior * sqrt(parent.nvisits) / (1 + child.nvisits)
-    return child.value() + u
+def select_action(config, root: Node, history):
+    nvisits = [(child.nvisits, action)
+               for action, child in root.children.items()]
+    if len(history) < config['nsamples']:
+        _, action = softmax_sample(nvisits)
+    else:
+        _, action = max(nvisits)
+    return action
+
+
