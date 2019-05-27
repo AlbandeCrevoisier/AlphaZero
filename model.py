@@ -44,7 +44,7 @@ def model(config):
         x = add([x, tmp])
         x = LeakyReLU()(x)
 
-    # Policy head
+    # Policy head, outputs logits
     p = Conv2D(2, 1, padding='same', kernel_regularizer=l2(c))(x)
     p = BatchNormalization()(p)
     p = LeakyReLU()(p)

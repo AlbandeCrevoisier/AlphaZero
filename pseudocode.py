@@ -178,7 +178,6 @@ class Network(object):
 
         self.model = Model(inputs=x, outputs=[v, p])
 
-
     def inference(self, image):
         return self.model.predict([[image]])    # Value, Policy
 
