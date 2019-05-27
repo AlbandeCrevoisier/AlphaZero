@@ -7,18 +7,26 @@ from tensorflow.keras.regularizers import l2
 from tensorflow.keras.optimizers import SGD
 
 
-def model(goban_size=19, nfilters=256, nresiduals=19, c=1e-4):
-    """AlphaZero model.
+def model(config):
+    """AlphaZero network model..
 
     The defaults are the values from the paper.
-    Architecture:
+    - input
+        - 8 last moves by each player
+        - a layer indicating whose turn it is
     - body
         - single convolutional block
         - nresiduals residual blocks
     - two heads
-        - policy
-        - value
+        - policy: logits of probability for each move, including pass
+        - value: scalar
     """
+    batch_size = config['batch_size']
+    goban_size = config['goban_size']
+    nfilters = config['nfilters']
+    nresiduals = config['nresiduals']
+    c = config['l2_param']
+    
     input = Input((goban_size, goban_size, 17))
 
     # First block
@@ -61,7 +69,5 @@ def loss(y_true, y_pred):
     return l
 
 
-def train():
-    m = Model()
-    m.compile(loss=loss, optimizer=SGD(2e-2, 0.9))
-    m.fit()
+def compile(m: Model)
+    return m.compile(loss=loss, optimizer=SGD(2e-2, 0.9))
