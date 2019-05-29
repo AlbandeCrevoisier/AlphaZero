@@ -83,13 +83,3 @@ def mcts(config, history, model):
         make_children(node, policy_logits, temp_history)
         back_propag(search_path, value, scratch_game.to_play()) # TODO scrath_game.to_play
     return select_action(config, game, root), root
-
-
-def select_action(config: AlphaZeroConfig, game: Game, root: Node):
-    visit_counts = [(child.visit_count, action)
-                    for action, child in root.children.iteritems()]
-    if len(game.history) < config.num_sampling_moves:
-        _, action = softmax_sample(visit_counts)
-    else:
-        _, action = max(visit_counts)
-    return action
