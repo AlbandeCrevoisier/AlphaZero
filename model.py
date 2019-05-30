@@ -1,3 +1,6 @@
+from numpy import zeros, ones
+
+
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Flatten, Dense
 from tensorflow.keras.layers import Conv2D, BatchNormalization, LeakyReLU, add
@@ -5,6 +8,14 @@ from tensorflow.keras.losses import mean_squared_error
 from tensorflow.nn import softmax_cross_entropy_with_logits_v2
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.optimizers import SGD
+
+
+def get_input_features(config, last_moves: List, to_play):
+    """Last_moves: at most 16 last goban positions."""
+    goban_size = config['goban_size']
+    while len(last_moves) < 16:
+        last_moves.insert(0, zeros((goban_size, goban_size)))
+    last_moves.append(to_play * ones((goban_size, goban_size)))
 
 
 def model(config):
@@ -30,29 +41,34 @@ def model(config):
     input = Input((goban_size, goban_size, 17))
 
     # First block
-    x = Conv2D(nfilters, 3, padding='same', kernel_regularizer=l2(c))(input)
+    x = Conv2D(nfilters, 3, 1, 'same', 'channels_first',
+               kernel_regularizer=l2(c))(input)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
 
     # Residual blocks
     for _ in range(nresiduals):
-        tmp = Conv2D(nfilters, 3, padding='same', kernel_regularizer=l2(c))(x)
+        tmp = Conv2D(nfilters, 3, 1, 'same', 'channels_first',
+                     kernel_regularizer=l2(c))(x)
         tmp = BatchNormalization()(tmp)
         tmp = LeakyReLU()(tmp)
-        tmp = Conv2D(nfilters, 3, padding='same', kernel_regularizer=l2(c))(x)
+        tmp = Conv2D(nfilters, 3, 1, 'same', 'channels_first',
+                     kernel_regularizer=l2(c))(x)
         tmp = BatchNormalization()(tmp)
         x = add([x, tmp])
         x = LeakyReLU()(x)
 
     # Policy head, outputs logits
-    p = Conv2D(2, 1, padding='same', kernel_regularizer=l2(c))(x)
+    p = Conv2D(2, 1, 1, 'same', 'channels_first',
+               kernel_regularizer=l2(c))(x)
     p = BatchNormalization()(p)
     p = LeakyReLU()(p)
     p = Flatten()(p)
     p = Dense(goban_size * goban_size + 1)(p)
 
     # Value head
-    v = Conv2D(1, 1, padding='same', kernel_regularizer=l2(c))(x)
+    v = Conv2D(1, 1, 1, 'same', 'channels_first',
+               kernel_regularizer=l2(c))(x)
     v = BatchNormalization()(v)
     v = LeakyReLU()(v)
     v = Flatten()(v)
