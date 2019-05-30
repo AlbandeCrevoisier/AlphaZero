@@ -65,7 +65,8 @@ def select_action(config, root: Node, history):
 
 def mcts(config, history, model):
     root = Node(0)
-    _, policy_logits = model.predict() #TODO add param with history
+    _, policy_logits = model.predict(get_input_features(config, history[-16:],
+                                                        root.to_play)
     make_children(root, policy_logits, history)
     add_exploration_noise(config, root)
 
@@ -81,5 +82,5 @@ def mcts(config, history, model):
 
         value, policy_logits = model.predict() #TODO add param with temp_history
         make_children(node, policy_logits, temp_history)
-        back_propag(search_path, value, scratch_game.to_play()) # TODO scrath_game.to_play
+        back_propag(search_path, value, scratch_game.to_play()) # TODO scratch_game.to_play
     return select_action(config, game, root), root
