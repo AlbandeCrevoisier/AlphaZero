@@ -103,8 +103,7 @@ class Game(object):
         self.child_visits.append([
             root.children[a].visit_count / sum_visits if a in root.children
                                                       else 0
-            for a in range(self.num_actions)
-        ])
+            for a in range(self.num_actions)])
 
     def make_image(self, state_index: int):
         # Game specific feature planes.
