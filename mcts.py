@@ -8,7 +8,7 @@ class Node:
 
     def __init__(self, prior: float, to_play):
         self.nvisits = 0
-        self.to_play = -1 # 1 for Black, -1 for White.
+        self.to_play = -1 # 0 for Black, 1 for White.
         self.tot_val = 0
         self.prior = prior
         self.children = {} # {action: child}
@@ -23,7 +23,7 @@ def make_children(node: Node, policy_logits, position):
     policy = {a: exp(policy_logits[a]) for a in legal_actions(position)}
     policy_sum = sum(policy.values())
     for action, p in policy.items():
-        node.children[action] = Node(p / policy_sum, -node.to_play)
+        node.children[action] = Node(p / policy_sum, 1 - node.to_play)
 
 
 def add_exploration_noise(config, node: Node):
@@ -72,7 +72,7 @@ def mcts(config, history, model):
 
     for _ in range(config.nsim):
         node = root
-        temp_history = history
+        temp_history = history.copy()
         search_path = [node]
 
         while len(node.children) != 0:
@@ -83,5 +83,5 @@ def mcts(config, history, model):
         value, policy_logits = model.predict(
             get_input_features(config, history[-16:], node.to_play))
         make_children(node, policy_logits, temp_history)
-        back_propag(search_path, value, scratch_game.to_play()) # TODO scratch_game.to_play
+        back_propag(search_path, value, len(temp_history) % 2)
     return select_action(config, game, root), root
