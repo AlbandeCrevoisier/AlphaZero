@@ -66,21 +66,22 @@ def select_action(config, root: Node, history):
 def mcts(config, history, model):
     root = Node(0)
     _, policy_logits = model.predict(get_input_features(config, history[-16:],
-                                                        root.to_play)
+                                                        root.to_play))
     make_children(root, policy_logits, history)
     add_exploration_noise(config, root)
 
     for _ in range(config.nsim):
         node = root
-        h = history
+        temp_history = history
         search_path = [node]
 
         while len(node.children) != 0:
             action, node = select_child(config, node)
-            scratch_game.apply(action) # TODO apply turn to temp_history
+            apply(action, temp_history)
             search_path.append(node)
 
-        value, policy_logits = model.predict() #TODO add param with temp_history
+        value, policy_logits = model.predict(
+            get_input_features(config, history[-16:], node.to_play))
         make_children(node, policy_logits, temp_history)
         back_propag(search_path, value, scratch_game.to_play()) # TODO scratch_game.to_play
     return select_action(config, game, root), root
