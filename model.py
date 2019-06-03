@@ -10,12 +10,14 @@ from tensorflow.keras.regularizers import l2
 from tensorflow.keras.optimizers import SGD
 
 
-def get_input_features(config, last_moves: List, to_play):
-    """Last_moves: at most 16 last goban positions."""
+def get_input_features(config, history: List, index, to_play):
+    """ Takes the 16 last moves up until index included. """
     goban_size = config['goban_size']
-    while len(last_moves) < 16:
-        last_moves.insert(0, zeros((goban_size, goban_size)))
-    last_moves.append(to_play * ones((goban_size, goban_size)))
+    moves = history[max(0, index - 15), index + 1]
+    while len(moves) < 16:
+        moves.insert(0, zeros((goban_size, goban_size)))
+    moves.append(to_play * ones((goban_size, goban_size)))
+    return moves
 
 
 def model(config):
