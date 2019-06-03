@@ -1,6 +1,7 @@
 """Monte Carlo Tree Search: variant of the PUCT"""
 from math import exp, log, sqrt
 from numpy.random import gamma
+from model import get_input_features
 from go import legal_actions
 
 
@@ -8,7 +9,7 @@ class Node:
 
     def __init__(self, prior: float, to_play):
         self.nvisits = 0
-        self.to_play = -1 # 0 for Black, 1 for White.
+        self.to_play = 0 # 1 for Black, -1 for White.
         self.tot_val = 0
         self.prior = prior
         self.children = {} # {action: child}
@@ -23,7 +24,7 @@ def make_children(node: Node, policy_logits, position):
     policy = {a: exp(policy_logits[a]) for a in legal_actions(position)}
     policy_sum = sum(policy.values())
     for action, p in policy.items():
-        node.children[action] = Node(p / policy_sum, 1 - node.to_play)
+        node.children[action] = Node(p / policy_sum, -node.to_play)
 
 
 def add_exploration_noise(config, node: Node):
@@ -34,7 +35,7 @@ def add_exploration_noise(config, node: Node):
         node.children[a].prior *= (1 - frac) + n * frac
 
 
-def back_propag(search_path: List[Node], value: float, to_play):
+def back_propag(search_path, value: float, to_play):
     for node in search_path:
         node.tot_val += value if node.to_play == to_play else (1 - value)
         node.nvisits += 1
@@ -64,7 +65,8 @@ def select_action(config, root: Node, history):
 
 
 def mcts(config, history, model):
-    root = Node(0)
+    to_play = 1 if len(history) % 2 == 0 else -1
+    root = Node(0, to_play)
     _, policy_logits = model.predict(
         get_input_features(config, history, -1, root.to_play))
     make_children(root, policy_logits, history)
