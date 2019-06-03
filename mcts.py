@@ -65,8 +65,8 @@ def select_action(config, root: Node, history):
 
 def mcts(config, history, model):
     root = Node(0)
-    _, policy_logits = model.predict(get_input_features(config, history[-16:],
-                                                        root.to_play))
+    _, policy_logits = model.predict(
+        get_input_features(config, history, -1, root.to_play))
     make_children(root, policy_logits, history)
     add_exploration_noise(config, root)
 
@@ -81,7 +81,7 @@ def mcts(config, history, model):
             search_path.append(node)
 
         value, policy_logits = model.predict(
-            get_input_features(config, history[-16:], node.to_play))
+            get_input_features(config, history, -1, node.to_play))
         make_children(node, policy_logits, temp_history)
         back_propag(search_path, value, len(temp_history) % 2)
     return select_action(config, game, root), root
