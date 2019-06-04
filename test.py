@@ -6,5 +6,5 @@ c = config
 h = []
 m = model(c)
 compile(m)
+m.predict()
 a, r = mcts(c, h, m)
-

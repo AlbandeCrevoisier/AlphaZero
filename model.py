@@ -1,5 +1,4 @@
-from numpy import zeros, ones
-
+from numpy import array, zeros, ones, moveaxis
 
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Flatten, Dense
@@ -17,6 +16,8 @@ def get_input_features(config, history, index, to_play):
     while len(moves) < 16:
         moves.insert(0, zeros((goban_size, goban_size)))
     moves.append(to_play * ones((goban_size, goban_size)))
+    # Move channel last
+    moves = moveaxis(moves, 0, -1)
     return moves
 
 
@@ -43,34 +44,29 @@ def model(config):
     input = Input((goban_size, goban_size, 17))
 
     # First block
-    x = Conv2D(nfilters, 3, 1, 'same', 'channels_first',
-               kernel_regularizer=l2(c))(input)
+    x = Conv2D(nfilters, 3, 1, 'same', kernel_regularizer=l2(c))(input)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
 
     # Residual blocks
     for _ in range(nresiduals):
-        tmp = Conv2D(nfilters, 3, 1, 'same', 'channels_first',
-                     kernel_regularizer=l2(c))(x)
+        tmp = Conv2D(nfilters, 3, 1, 'same', kernel_regularizer=l2(c))(x)
         tmp = BatchNormalization()(tmp)
         tmp = LeakyReLU()(tmp)
-        tmp = Conv2D(nfilters, 3, 1, 'same', 'channels_first',
-                     kernel_regularizer=l2(c))(x)
+        tmp = Conv2D(nfilters, 3, 1, 'same',kernel_regularizer=l2(c))(x)
         tmp = BatchNormalization()(tmp)
         x = add([x, tmp])
         x = LeakyReLU()(x)
 
     # Policy head, outputs logits
-    p = Conv2D(2, 1, 1, 'same', 'channels_first',
-               kernel_regularizer=l2(c))(x)
+    p = Conv2D(2, 1, 1, 'same', kernel_regularizer=l2(c))(x)
     p = BatchNormalization()(p)
     p = LeakyReLU()(p)
     p = Flatten()(p)
     p = Dense(goban_size * goban_size + 1)(p)
 
     # Value head
-    v = Conv2D(1, 1, 1, 'same', 'channels_first',
-               kernel_regularizer=l2(c))(x)
+    v = Conv2D(1, 1, 1, 'same', kernel_regularizer=l2(c))(x)
     v = BatchNormalization()(v)
     v = LeakyReLU()(v)
     v = Flatten()(v)
@@ -88,4 +84,4 @@ def loss(y_true, y_pred):
 
 
 def compile(m: Model):
-    return m.compile(loss=loss, optimizer=SGD(2e-2, 0.9))
+    m.compile(loss=loss, optimizer=SGD(2e-2, 0.9))

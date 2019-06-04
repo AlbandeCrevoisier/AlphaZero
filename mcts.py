@@ -1,5 +1,6 @@
 """Monte Carlo Tree Search: variant of the PUCT"""
 from math import exp, log, sqrt
+from numpy import array
 from numpy.random import gamma
 from model import get_input_features
 from go import legal_actions
@@ -67,8 +68,8 @@ def select_action(config, root: Node, history):
 def mcts(config, history, model):
     to_play = 1 if len(history) % 2 == 0 else -1
     root = Node(0, to_play)
-    _, policy_logits = model.predict(
-        get_input_features(config, history, -1, root.to_play))
+    image = array([get_input_features(config, history, -1, root.to_play)])
+    _, policy_logits = model.predict(image)
     make_children(root, policy_logits, history)
     add_exploration_noise(config, root)
 
