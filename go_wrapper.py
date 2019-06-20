@@ -18,6 +18,8 @@ def legal_actions(position, prev_position):
     for m in moves:
         if (apply(m, position) == prev_position).all() == True:
             moves.remove(m)
+            break
+    return moves
 
 
 def apply(action, position):
