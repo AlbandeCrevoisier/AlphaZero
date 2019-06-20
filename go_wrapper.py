@@ -12,9 +12,12 @@ def terminal_value(self, to_play):
 
 def legal_actions(position, prev_position):
     """ Return all legal moves as flattened coordinates. """
-    # Without ko yet
     p = go.Position(board=position.copy())
-    return p.all_legal_moves()
+    moves = p.all_legal_moves()
+    # brut force ko finding
+    for m in moves:
+        if (apply(m, position) == prev_position).all() == True:
+            moves.remove(m)
 
 
 def apply(action, position):
