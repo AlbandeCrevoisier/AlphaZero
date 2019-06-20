@@ -40,7 +40,7 @@ SGF             'aa'            'sa'            ''
 GTP             'A19'           'T19'           'pass'
 """
 
-import minigo_go
+import go
 
 # We provide more than 19 entries here in case of boards larger than 19 x 19.
 _SGF_COLUMNS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
