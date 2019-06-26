@@ -22,5 +22,6 @@ def legal_actions(position, prev_position):
     return moves
 
 
-def apply(action, position):
-    return go.Position(board=position).play_move(coords.from_flat(action)).board
+def apply(action, to_play, position):
+    p = go.Position(board=position)
+    return p.play_move(coords.from_flat(action), color=to_play).board
