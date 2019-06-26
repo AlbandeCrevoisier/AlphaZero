@@ -3,7 +3,7 @@ from math import exp, log, sqrt
 from numpy import array
 from numpy.random import gamma
 from model import get_input_features
-from go import legal_actions
+from go import legal_actions, apply
 
 
 class Node:
@@ -22,7 +22,8 @@ class Node:
 
 
 def make_children(node: Node, policy_logits, position):
-    policy = {a: exp(policy_logits[a]) for a in legal_actions(position)}
+#Add prev_position: probably pass history with an index?
+    policy = {a: exp(policy_logits[a]) for a in legal_actions(to_play, position)}
     policy_sum = sum(policy.values())
     for action, p in policy.items():
         node.children[action] = Node(p / policy_sum, -node.to_play)
@@ -80,7 +81,7 @@ def mcts(config, history, model):
 
         while len(node.children) != 0:
             action, node = select_child(config, node)
-            apply(action, temp_history)
+            apply(action, to_play, temp_history)
             search_path.append(node)
 
         value, policy_logits = model.predict(
