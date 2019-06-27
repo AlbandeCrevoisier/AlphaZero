@@ -1,3 +1,10 @@
+""" Go engine wrapper
+position: N*N numpy array.
+action: (x, y) where the origin is the top left.
+to_play: 1 for Black, -1 for White.
+"""
+
+
 import numpy as np
 import go, coords
 
