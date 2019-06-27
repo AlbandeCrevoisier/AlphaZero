@@ -1,12 +1,19 @@
-Reimplementation of DeepMind's Alpha Zero.
+Reimplementation of DeepMind's Alpha Zero using keras/tensorflow.
 
-To adapt to our resources, we downscaled the project as follows:
+The project has been downscaled as follows:
 - 5x5 goban
-- 256 filters instead of 256 (TO UPDATE WHEN CHANGED)
-- 2 residual blocks instead of 19
-
-We also simplified the job system, as we do not use it.
+- more modest network & exploration - see config.py
+- the algorithm will probably not run in parallel, at least not at the beginning
 
 Files:
-model.py - generate the keras model of the architecture
+model.py - model of the neural net
 mcts.py - Monte-Carlo Tree Search
+go_wrapper.py - go engine wrapper
+go.py & coords.py - minigo's go engine
+config.py - configuration file
+pseudocode.py - DeepMind's pseudocode
+modified_pseudocode.py - adaptation of DeepMind's pseudocode to my resources.
+
+DeepMind's pseudocode will eventually be removed.
+Please note that this is a beginner's work learning keras/tensorflow, NN, & Alpha Zero's
+algorithm, do not expect particularly clean code - yet.
