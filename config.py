@@ -11,5 +11,5 @@ config = {
     'nsamples': 3,            # 30
     'dirichlet': 0.03,         # 0.03
     'explo_fraction': 0.25,    # 0.25
-    'nsim': 800                # 800
+    'nsim': 10                # 800
     }
