@@ -17,3 +17,14 @@ modified_pseudocode.py - adaptation of DeepMind's pseudocode to my resources.
 DeepMind's pseudocode will eventually be removed.
 Please note that this is a beginner's work learning keras/tensorflow, NN, & Alpha Zero's
 algorithm, do not expect particularly clean code - yet.
+
+Roadmap:
+- ko
+- count captured stones or use chinese scoring rules
+- terminal
+- score the game
+
+- batch making
+- add training parameters
+
+- alternate self play & network training
