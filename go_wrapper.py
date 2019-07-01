@@ -32,9 +32,9 @@ def legal_actions(to_play, position):
     else:
         # Is there a better way of unwrapping this?
         ko = (t[0][0], t[1][0])
-    position[ko] = 0
+        position[ko] = 0
 
-    p = go.Position(board=position.copy(), ko=ko)
+    p = go.Position(board=position.copy(), ko=ko, to_play=to_play)
     is_legal = p.all_legal_moves()
     # minigo/go all_legal_moves returns a list of 1 or 0 for legal or not.
     return np.extract(is_legal == 1, np.arange(len(is_legal)))
