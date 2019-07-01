@@ -3,7 +3,7 @@ from math import exp, log, sqrt
 from numpy import array
 from numpy.random import gamma
 from model import get_input_features
-from go import legal_actions, apply
+from go_wrapper import legal_actions, apply
 
 
 class Node:
@@ -21,8 +21,8 @@ class Node:
         return self.tot_val / self.nvisits
 
 
-def make_children(node: Node, policy_logits, position):
-#Add prev_position: probably pass history with an index?
+def make_children(node: Node, policy_logits, prev_Position):
+    position, ko = prev_Position[0], prev_Position[1]
     policy = {a: exp(policy_logits[a]) for a in legal_actions(to_play, position)}
     policy_sum = sum(policy.values())
     for action, p in policy.items():
@@ -56,10 +56,10 @@ def select_child(config, node: Node):
     return action, child
 
 
-def select_action(config, root: Node, history):
+def select_action(config, root: Node, nmoves):
     nvisits = [(child.nvisits, action)
                for action, child in root.children.items()]
-    if len(history) < config['nsamples']:
+    if nmoves < config['maxmoves']:
         _, action = softmax_sample(nvisits)
     else:
         _, action = max(nvisits)
@@ -71,21 +71,21 @@ def mcts(config, history, model):
     root = Node(0, to_play)
     image = array([get_input_features(config, history, -1, root.to_play)])
     _, policy_logits = model.predict(image)
-    make_children(root, policy_logits, history)
+    make_children(root, policy_logits, history[-1])
     add_exploration_noise(config, root)
 
     for _ in range(config.nsim):
         node = root
-        temp_history = history.copy()
+        tmp_history = history.copy()
         search_path = [node]
 
         while len(node.children) != 0:
             action, node = select_child(config, node)
-            apply(action, to_play, temp_history)
+            tmp_history.append(apply(action, to_play, tmp_history[-1]))
             search_path.append(node)
 
         value, policy_logits = model.predict(
             get_input_features(config, history, -1, node.to_play))
-        make_children(node, policy_logits, temp_history)
-        back_propag(search_path, value, len(temp_history) % 2)
-    return select_action(config, game, root), root
+        make_children(node, policy_logits, tmp_history[-1])
+        back_propag(search_path, value, len(tmp_history) % 2)
+    return select_action(config, root, len(history)), root
