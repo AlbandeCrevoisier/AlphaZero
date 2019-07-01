@@ -19,7 +19,6 @@ Please note that this is a beginner's work learning keras/tensorflow, NN, & Alph
 algorithm, do not expect particularly clean code - yet.
 
 Roadmap:
-- ko
 - count captured stones or use chinese scoring rules
 - terminal
 - score the game
