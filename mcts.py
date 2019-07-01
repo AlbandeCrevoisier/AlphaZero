@@ -21,8 +21,7 @@ class Node:
         return self.tot_val / self.nvisits
 
 
-def make_children(node: Node, policy_logits, prev_Position):
-    position, ko = prev_Position[0], prev_Position[1]
+def make_children(node: Node, policy_logits, position, to_play):
     policy = {a: exp(policy_logits[a]) for a in legal_actions(to_play, position)}
     policy_sum = sum(policy.values())
     for action, p in policy.items():
@@ -71,7 +70,7 @@ def mcts(config, history, model):
     root = Node(0, to_play)
     image = array([get_input_features(config, history, -1, root.to_play)])
     _, policy_logits = model.predict(image)
-    make_children(root, policy_logits, history[-1])
+    make_children(root, policy_logits, history[-1], to_play)
     add_exploration_noise(config, root)
 
     for _ in range(config.nsim):
@@ -86,6 +85,6 @@ def mcts(config, history, model):
 
         value, policy_logits = model.predict(
             get_input_features(config, history, -1, node.to_play))
-        make_children(node, policy_logits, tmp_history[-1])
+        make_children(node, policy_logits, tmp_history[-1], to_play)
         back_propag(search_path, value, len(tmp_history) % 2)
     return select_action(config, root, len(history)), root
