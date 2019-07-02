@@ -33,7 +33,7 @@ def add_exploration_noise(config, node: Node):
     noise = gamma(config['dirichlet'], 1, len(actions))
     frac = config['explo_fraction']
     for a, n in zip(actions, noise):
-        node.children[a].prior *= (1 - frac) + n * frac
+        node.children[a].prior = node.children[a].prior * (1 - frac) + n * frac
 
 
 def back_propag(search_path, value: float, to_play):
@@ -72,7 +72,7 @@ def mcts(config, history, model):
     root = Node(0, to_play)
     image = [[get_input_features(config, history, -1, root.to_play)]]
     policy_logits, _ = model.predict(image)
-    make_children(root, policy_logits.flatten(), history[-1], to_play)
+    make_children(root, policy_logits[0], history[-1], to_play)
     add_exploration_noise(config, root)
 
     for _ in range(config['nsim']):
@@ -86,7 +86,7 @@ def mcts(config, history, model):
             search_path.append(node)
 
         policy_logits, value = model.predict(
-            [[get_input_features(config, history, -1, node.to_play)]])
-        make_children(node, policy_logits.flatten(), tmp_history[-1], to_play)
-        back_propag(search_path, value, len(tmp_history) % 2)
+            [[get_input_features(config, tmp_history, -1, node.to_play)]])
+        make_children(node, policy_logits[0], tmp_history[-1], node.to_play)
+        back_propag(search_path, value, node.to_play)
     return select_action(config, root, len(history)), root
