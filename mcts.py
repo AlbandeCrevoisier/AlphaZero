@@ -59,7 +59,9 @@ def select_action(config, root: Node, nmoves):
     nvisits = [(child.nvisits, action)
                for action, child in root.children.items()]
     if nmoves < config['maxmoves']:
-        _, action = softmax_sample(nvisits)
+        # TODO: use softmax sampling to force diversity.
+        # _, action = softmax_sample(nvisits)
+        _, action = max(nvisits)
     else:
         _, action = max(nvisits)
     return action
