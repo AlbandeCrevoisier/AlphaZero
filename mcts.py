@@ -68,12 +68,12 @@ def select_action(config, root: Node, nmoves):
 def mcts(config, history, model):
     to_play = -1 if len(history) % 2 == 0 else 1
     root = Node(0, to_play)
-    image = array([get_input_features(config, history, -1, root.to_play)])
-    _, policy_logits = model.predict(image)
-    make_children(root, policy_logits, history[-1], to_play)
+    image = [[get_input_features(config, history, -1, root.to_play)]]
+    policy_logits, _ = model.predict(image)
+    make_children(root, policy_logits.flatten(), history[-1], to_play)
     add_exploration_noise(config, root)
 
-    for _ in range(config.nsim):
+    for _ in range(config['nsim']):
         node = root
         tmp_history = history.copy()
         search_path = [node]
@@ -83,8 +83,8 @@ def mcts(config, history, model):
             tmp_history.append(apply(action, to_play, tmp_history[-1]))
             search_path.append(node)
 
-        value, policy_logits = model.predict(
-            get_input_features(config, history, -1, node.to_play))
-        make_children(node, policy_logits, tmp_history[-1], to_play)
+        policy_logits, value = model.predict(
+            [[get_input_features(config, history, -1, node.to_play)]])
+        make_children(node, policy_logits.flatten(), tmp_history[-1], to_play)
         back_propag(search_path, value, len(tmp_history) % 2)
     return select_action(config, root, len(history)), root
