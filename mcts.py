@@ -82,7 +82,6 @@ def mcts(config, history, model):
 
         while len(node.children) != 0:
             action, node = select_child(config, node)
-            print(node.to_play)
             tmp_history.append(apply(action, node.to_play, tmp_history[-1]))
             search_path.append(node)
 
