@@ -402,10 +402,13 @@ class Position():
         if move is None:
             return True
         if self.board[move] != EMPTY:
+            print("There is already a stone here.")
             return False
         if move == self.ko:
+            print("Ko!")
             return False
         if self.is_move_suicidal(move):
+            print("Cannot commit suicide.")
             return False
 
         return True
