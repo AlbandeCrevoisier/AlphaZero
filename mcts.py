@@ -70,7 +70,7 @@ def select_action(config, root: Node, nmoves):
 def mcts(config, history, model):
     to_play = -1 if len(history) % 2 == 0 else 1
     root = Node(0, to_play)
-    image = [[get_input_features(config, history, -1, root.to_play)]]
+    image = [[get_input_features(config, history, -1, to_play)]]
     policy_logits, _ = model.predict(image)
     make_children(root, policy_logits[0], history[-1], to_play)
     add_exploration_noise(config, root)
@@ -82,7 +82,8 @@ def mcts(config, history, model):
 
         while len(node.children) != 0:
             action, node = select_child(config, node)
-            tmp_history.append(apply(action, node.to_play, tmp_history[-1]))
+            # -node.to_play, since the node has been replaced by its chidlren.
+            tmp_history.append(apply(action, -node.to_play, tmp_history[-1]))
             search_path.append(node)
 
         policy_logits, value = model.predict(
