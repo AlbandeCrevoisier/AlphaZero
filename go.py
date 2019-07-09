@@ -18,7 +18,8 @@ A Coordinate is a tuple index into the board.
 A Move is a (Coordinate c | None).
 A PlayerMove is a (Color, Move) tuple
 
-(0, 0) is considered to be the upper left corner of the board, and (18, 0) is the lower left.
+(0, 0) is considered to be the upper left corner of the board,
+and (18, 0) is the lower left.
 """
 from collections import namedtuple
 import copy
@@ -60,7 +61,8 @@ class PlayerMove(namedtuple('PlayerMove', ['color', 'move'])):
     pass
 
 
-class PositionWithContext(namedtuple('SgfPosition', ['position', 'next_move', 'result'])):
+class PositionWithContext(namedtuple('SgfPosition',
+                                     ['position', 'next_move', 'result'])):
     pass
 
 
@@ -72,7 +74,8 @@ def place_stones(board, color, stones):
 def replay_position(position, result):
     """
     Wrapper for a go.Position which replays its history.
-    Assumes an empty start position! (i.e. no handicap, and history must be exhaustive.)
+    Assumes an empty start position! (i.e. no handicap, and history must be
+    exhaustive.)
 
     Result must be passed in, since a resign cannot be inferred from position
     history alone.
@@ -139,12 +142,15 @@ def is_eyeish(board, c):
 class Group(namedtuple('Group', ['id', 'stones', 'liberties', 'color'])):
     """
     stones: a frozenset of Coordinates belonging to this group
-    liberties: a frozenset of Coordinates that are empty and adjacent to this group.
+    liberties: a frozenset of Coordinates that are empty and adjacent
+               to this group.
     color: color of this group
     """
 
     def __eq__(self, other):
-        return self.stones == other.stones and self.liberties == other.liberties and self.color == other.color
+        return (self.stones == other.stones
+                and self.liberties == other.liberties
+                and self.color == other.color)
 
 
 class LibertyTracker():
@@ -178,15 +184,16 @@ class LibertyTracker():
 
         return lib_tracker
 
-    def __init__(self, group_index=None, groups=None, liberty_cache=None, max_group_id=1):
+    def __init__(self, group_index=None, groups=None, liberty_cache=None,
+                 max_group_id=1):
         # group_index: a NxN numpy array of group_ids. -1 means no group
         # groups: a dict of group_id to groups
         # liberty_cache: a NxN numpy array of liberty counts
         self.group_index = group_index if group_index is not None else - \
             np.ones([N, N], dtype=np.int32)
         self.groups = groups or {}
-        self.liberty_cache = liberty_cache if liberty_cache is not None else np.zeros([
-                                                                                      N, N], dtype=np.uint8)
+        self.liberty_cache = (liberty_cache if liberty_cache is not None
+                              else np.zeros([N, N], dtype=np.uint8))
         self.max_group_id = max_group_id
 
     def __deepcopy__(self, memodict={}):
@@ -194,7 +201,9 @@ class LibertyTracker():
         new_lib_cache = np.copy(self.liberty_cache)
         # shallow copy
         new_groups = copy.copy(self.groups)
-        return LibertyTracker(new_group_index, new_groups, liberty_cache=new_lib_cache, max_group_id=self.max_group_id)
+        return LibertyTracker(new_group_index, new_groups,
+                              liberty_cache=new_lib_cache,
+                              max_group_id=self.max_group_id)
 
     def add_stone(self, color, c):
         assert self.group_index[c] == MISSING_GROUP_ID
@@ -218,7 +227,8 @@ class LibertyTracker():
             color, c, empty_neighbors, friendly_neighboring_group_ids)
 
         # new_group becomes stale as _update_liberties and
-        # _handle_captures are called; must refetch with self.groups[new_group.id]
+        # _handle_captures are called;
+        # must refetch with self.groups[new_group.id]
         for group_id in opponent_neighboring_group_ids:
             neighbor_group = self.groups[group_id]
             if len(neighbor_group.liberties) == 1:
@@ -299,7 +309,8 @@ class Position():
         recent: a tuple of PlayerMoves, such that recent[-1] is the last move.
         board_deltas: a np.array of shape (n, go.N, go.N) representing changes
             made to the board at each move (played move and captures).
-            Should satisfy next_pos.board - next_pos.board_deltas[0] == pos.board
+            Should satisfy:
+                next_pos.board - next_pos.board_deltas[0] == pos.board
         to_play: BLACK or WHITE
         """
         assert type(recent) is tuple
@@ -311,16 +322,18 @@ class Position():
         self.lib_tracker = lib_tracker or LibertyTracker.from_board(self.board)
         self.ko = ko
         self.recent = recent
-        self.board_deltas = board_deltas if board_deltas is not None else np.zeros([
-                                                                                   0, N, N], dtype=np.int8)
+        self.board_deltas = (board_deltas if board_deltas is not None
+                             else np.zeros([0, N, N], dtype=np.int8))
         self.to_play = to_play
 
     def __deepcopy__(self, memodict={}):
         new_board = np.copy(self.board)
         new_lib_tracker = copy.deepcopy(self.lib_tracker)
-        return Position(new_board, self.n, self.komi, self.caps, new_lib_tracker, self.ko, self.recent, self.board_deltas, self.to_play)
+        return Position(new_board, self.n, self.komi, self.caps,
+                        new_lib_tracker, self.ko, self.recent,
+                        self.board_deltas, self.to_play)
 
-    def __str__(self, colors=True):
+    def __str__(self, colors=False):
         if colors:
             pretty_print_map = {
                 WHITE: '\x1b[0;31;47mO',
@@ -345,8 +358,10 @@ class Position():
         for i in range(N):
             row = []
             for j in range(N):
-                appended = '<' if (self.recent and (i, j) ==
-                                   self.recent[-1].move) else ' '
+                if self.recent and (i, j) == self.recent[-1].move:
+                    appended = '<'
+                else:
+                    appended = ' '
                 row.append(pretty_print_map[board[i, j]] + appended)
                 if colors:
                     row.append('\x1b[0m')
@@ -396,7 +411,7 @@ class Position():
         return True
 
     def all_legal_moves(self):
-        'Returns a np.array of size go.N**2 + 1, with 1 = legal, 0 = illegal'
+        """ Returns a np.array with 1 = legal, 0 = illegal """
         # by default, every move is legal
         legal_moves = np.ones([N, N], dtype=np.int8)
         # ...unless there is already a stone there
@@ -408,9 +423,7 @@ class Position():
         num_adjacent_stones = (adjacent[:-2, 1:-1] + adjacent[1:-1, :-2] +
                                adjacent[2:, 1:-1] + adjacent[1:-1, 2:])
         # Surrounded spots are those that are empty and have 4 adjacent stones.
-        surrounded_spots = np.multiply(
-            (self.board == EMPTY),
-            (num_adjacent_stones == 4))
+        surrounded_spots = ((self.board == EMPTY) @ (num_adjacent_stones == 4))
         # Such spots are possibly illegal, unless they are capturing something.
         # Iterate over and manually check each spot.
         for coord in np.transpose(np.nonzero(surrounded_spots)):
@@ -521,7 +534,9 @@ class Position():
                 territory_color = UNKNOWN  # dame, or seki
             place_stones(working_board, territory_color, territory)
 
-        return np.count_nonzero(working_board == BLACK) - np.count_nonzero(working_board == WHITE) - self.komi
+        return (np.count_nonzero(working_board == BLACK)
+                - np.count_nonzero(working_board == WHITE)
+                - self.komi)
 
     def result(self):
         score = self.score()
