@@ -10,7 +10,7 @@ class Node:
 
     def __init__(self, prior: float, to_play):
         self.nvisits = 0
-        self.to_play = 0 # 1 for Black, -1 for White.
+        self.to_play = to_play # 1 for Black, -1 for White.
         self.tot_val = 0
         self.prior = prior
         self.children = {} # {action: child}
@@ -82,7 +82,8 @@ def mcts(config, history, model):
 
         while len(node.children) != 0:
             action, node = select_child(config, node)
-            tmp_history.append(apply(action, to_play, tmp_history[-1]))
+            print(node.to_play)
+            tmp_history.append(apply(action, node.to_play, tmp_history[-1]))
             search_path.append(node)
 
         policy_logits, value = model.predict(
