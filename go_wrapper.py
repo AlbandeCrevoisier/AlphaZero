@@ -43,9 +43,9 @@ def legal_actions(to_play, position):
 def apply(action, to_play, board):
     # Pass
     if action is board.size:
-        return board
-    p = go.Position(board=board)
-    q = p.play_move(coords.from_flat(action), color=to_play)
+        return board.copy()
+    p = go.Position(board=board.copy(), to_play=to_play)
+    q = p.play_move(coords.from_flat(action))
     if q.ko is not None:
         q.board[q.ko] = 4
     return q.board.copy()
