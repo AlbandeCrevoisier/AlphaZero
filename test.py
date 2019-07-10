@@ -13,10 +13,9 @@ compile(m)
 to_play = 1
 
 for _ in range(50):
-    a, _ = mcts(c, h.copy(), m)
-    h.append(apply(a, to_play, h[-1]))
-    print(type(h[-1]))
-    to_play *= -1
+    a, _ = mcts(c, h, m)
+    apply(a, h)
+    print(a)
 
 print(h[-1])
-print(Position(h[-1]).score())
+print(Position(h[-1], komi=0).score())
