@@ -40,7 +40,11 @@ def legal_actions(history):
     p = go.Position(board=position.copy(), komi=0, ko=ko, to_play=to_play)
     is_legal = p.all_legal_moves()
     # minigo/go all_legal_moves returns a list of 1 or 0 for legal or not.
-    return np.extract(is_legal == 1, np.arange(len(is_legal)))
+    legal_moves = np.extract(is_legal == 1, np.arange(len(is_legal)))
+    # Do not pass before turn 20
+    if len(history) < 20:
+        legal_moves = legal_moves[:-1]
+    return legal_moves
 
 
 def apply(action, history):
