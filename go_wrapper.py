@@ -1,7 +1,8 @@
 """ Go engine wrapper
 position: N*N numpy array.
-action: (x, y) where the origin is the top left.
-ko: an action.
+history: list of positions.
+action: flat coordinates.
+ko: tuple coordinates, where the origin is the top left of the goban.
 to_play: 1 for Black, -1 for White.
 
 As of now, ko are handled as follows:
@@ -23,8 +24,10 @@ def terminal_value(self, to_play):
     pass
 
 
-def legal_actions(to_play, position):
+def legal_actions(history):
     """ Return all legal moves as flattened coordinates. """
+    position = history[-1]
+    to_play = -1 if len(history) % 2 == 0 else 1
     # Extract ko
     t = np.where(position == 4)
     if t[0].size is 0:
@@ -40,12 +43,17 @@ def legal_actions(to_play, position):
     return np.extract(is_legal == 1, np.arange(len(is_legal)))
 
 
-def apply(action, to_play, board):
-    # Pass
-    if action is board.size:
-        return board.copy()
-    p = go.Position(board=board.copy(), to_play=to_play)
-    q = p.play_move(coords.from_flat(action))
-    if q.ko is not None:
-        q.board[q.ko] = 4
-    return q.board.copy()
+def apply(action, history):
+    """ Apply the action as the next move of given history. 
+    action: legal move, given as flat coordinates.
+    history: history of the game so far.
+    """
+    board = history[-1].copy()
+    to_play = -1 if len(history) % 2 == 0 else 1
+    # if not pass
+    if action is not board.size:
+        p = go.Position(board=board, to_play=to_play)
+        p.play_move(coords.from_flat(action), mutate=True)
+        if p.ko is not None:
+            board[p.ko] = 4
+    history.append(board)
