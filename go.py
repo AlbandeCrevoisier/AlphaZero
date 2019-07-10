@@ -426,7 +426,7 @@ class Position():
         num_adjacent_stones = (adjacent[:-2, 1:-1] + adjacent[1:-1, :-2] +
                                adjacent[2:, 1:-1] + adjacent[1:-1, 2:])
         # Surrounded spots are those that are empty and have 4 adjacent stones.
-        surrounded_spots = ((self.board == EMPTY) @ (num_adjacent_stones == 4))
+        surrounded_spots = ((self.board == EMPTY) * (num_adjacent_stones == 4))
         # Such spots are possibly illegal, unless they are capturing something.
         # Iterate over and manually check each spot.
         for coord in np.transpose(np.nonzero(surrounded_spots)):
