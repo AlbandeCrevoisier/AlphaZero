@@ -86,7 +86,6 @@ def mcts(config, history, model):
             apply(action, tmp_history)
             search_path.append(node)
 
-        to_play = -1 if len(tmp_history) % 2 == 0 else 1
         policy_logits, value = model.predict(
             [[get_input_features(config, tmp_history, -1)]])
         make_children(node, policy_logits[0], tmp_history)
