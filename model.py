@@ -9,8 +9,12 @@ from tensorflow.keras.regularizers import l2
 from tensorflow.keras.optimizers import SGD
 
 
-def get_input_features(config, history, index, to_play):
+def get_input_features(config, history, index):
     """ Takes the 16 last moves up until index included. """
+    if index == -1:
+        to_play = -1 if len(history) % 2 == 0 else 1
+    else:
+        to_play = -1 if len(history[:index + 1]) % 2 == 0 else 1
     goban_size = config['goban_size']
     moves = history[max(0, index - 15) : index + 1]
     while len(moves) < 16:
