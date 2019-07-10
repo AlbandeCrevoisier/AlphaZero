@@ -15,7 +15,6 @@ to_play = 1
 for _ in range(50):
     a, _ = mcts(c, h, m)
     apply(a, h)
-    print(a)
 
 print(h[-1])
 print(Position(h[-1], komi=0).score())
