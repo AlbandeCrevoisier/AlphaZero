@@ -8,9 +8,8 @@ from go_wrapper import legal_actions, apply
 
 class Node:
 
-    def __init__(self, prior: float, to_play):
+    def __init__(self, prior: float):
         self.nvisits = 0
-        self.to_play = to_play # 1 for Black, -1 for White.
         self.tot_val = 0
         self.prior = prior
         self.children = {} # {action: child}
@@ -21,11 +20,12 @@ class Node:
         return self.tot_val / self.nvisits
 
 
-def make_children(node: Node, policy_logits, position, to_play):
-    policy = {a: exp(policy_logits[a]) for a in legal_actions(to_play, position)}
+def make_children(node: Node, policy_logits, history):
+    position = history[-1]
+    policy = {a: exp(policy_logits[a]) for a in legal_actions(history)}
     policy_sum = sum(policy.values())
     for action, p in policy.items():
-        node.children[action] = Node(p / policy_sum, -node.to_play)
+        node.children[action] = Node(p / policy_sum)
 
 
 def add_exploration_noise(config, node: Node):
@@ -36,9 +36,11 @@ def add_exploration_noise(config, node: Node):
         node.children[a].prior = node.children[a].prior * (1 - frac) + n * frac
 
 
-def back_propag(search_path, value: float, to_play):
+def back_propag(search_path, value: float):
+    is_player_turn = True
     for node in search_path:
-        node.tot_val += value if node.to_play == to_play else (1 - value)
+        node.tot_val += value if is_player_turn else (1 - value)
+        is_player_turn = not is_player_turn
         node.nvisits += 1
 
 
@@ -68,26 +70,25 @@ def select_action(config, root: Node, nmoves):
 
 
 def mcts(config, history, model):
-    to_play = -1 if len(history) % 2 == 0 else 1
-    root = Node(0, to_play)
-    image = [[get_input_features(config, history, -1, to_play)]]
+    root = Node(0)
+    image = [[get_input_features(config, history, -1)]]
     policy_logits, _ = model.predict(image)
-    make_children(root, policy_logits[0], history[-1], to_play)
+    make_children(root, policy_logits[0], history)
     add_exploration_noise(config, root)
 
     for _ in range(config['nsim']):
         node = root
         tmp_history = history.copy()
-        search_path = [node]
+        search_path = [root]
 
         while len(node.children) != 0:
             action, node = select_child(config, node)
-            # -node.to_play, since the node has been replaced by its chidlren.
-            tmp_history.append(apply(action, -node.to_play, tmp_history[-1]))
+            apply(action, tmp_history)
             search_path.append(node)
 
+        to_play = -1 if len(tmp_history) % 2 == 0 else 1
         policy_logits, value = model.predict(
-            [[get_input_features(config, tmp_history, -1, node.to_play)]])
-        make_children(node, policy_logits[0], tmp_history[-1], node.to_play)
-        back_propag(search_path, value, node.to_play)
+            [[get_input_features(config, tmp_history, -1)]])
+        make_children(node, policy_logits[0], tmp_history)
+        back_propag(search_path, value)
     return select_action(config, root, len(history)), root
