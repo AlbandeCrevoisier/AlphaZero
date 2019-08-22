@@ -39,7 +39,6 @@ def model(config):
         - policy: logits of probability for each move, including pass
         - value: scalar
     """
-    batch_size = config['batch_size']
     goban_size = config['goban_size']
     nfilters = config['nfilters']
     nresiduals = config['nresiduals']
