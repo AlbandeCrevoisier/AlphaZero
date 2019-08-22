@@ -4,7 +4,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Flatten, Dense
 from tensorflow.keras.layers import Conv2D, BatchNormalization, LeakyReLU, add
 from tensorflow.keras.losses import mean_squared_error
-from tensorflow.nn import softmax_cross_entropy_with_logits_v2
+from tensorflow.nn import softmax_cross_entropy_with_logits
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.optimizers import SGD
 
@@ -83,7 +83,7 @@ def model(config):
 
 def loss(y_true, y_pred):
     l = mean_squared_error(y_true[1], y_pred[1])
-    l += softmax_cross_entropy_with_logits_v2(y_true[0], y_pred[0])
+    l += softmax_cross_entropy_with_logits(y_true[0], y_pred[0])
     return l
 
 

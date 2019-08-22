@@ -1,4 +1,3 @@
-#!/usr/bin/python
 import numpy as np
 from mcts import *
 from model import *
