@@ -5,6 +5,7 @@ config = {
     'nfilters': 3,               # 256
     'nresiduals': 3,             # 19
     'l2_param': 1e-4,            # 1e-4
+    'nsteps': 100, # 700e3
     # MCTS
     'c_base': 19652,             # 19652
     'c_init': 1.25,              # 1.25
