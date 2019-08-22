@@ -28,3 +28,4 @@ for i in range(100):
     img.append(get_input_features(config, h, -1))
 
 m.fit(np.array(img), [target_policies, target_values], epochs=config['nsteps'])
+print(m.predict([[get_input_features(config, h, -1)]]))
