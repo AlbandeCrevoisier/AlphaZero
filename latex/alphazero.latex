@@ -1,0 +1,46 @@
+\documentclass[12pt]{article}
+
+\usepackage[T1]{fontenc}
+
+\title{Alpha Zero}
+\author{Alban de Crevoisier}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\abstract{}
+Alpha Zero est la dernière itération des algorithmes publiés par DeepMind dans le domaine
+du jeu de Go. C'en est la généralisation aux jeux du même type (échecs, shogi, ...), ce qui
+est indiqué par la perte du « Go » dans le nom: l'itération précédente s'appelait AlphaGo Master.
+Les optimisations spécifiques au jeu de go ont également été abandonnées dans cette version,
+ce qui ne l'empêche pas d'être plus performante qu'AlphaGo Master, aussi bien à l'entraînement
+qu'au jeu. L'algorithme lui-même n'a rien d'inédit, c'est une habile combinaison de techniques
+existant au préalable.
+
+\section{Introduction}
+
+AlphaGo n'est plus à présenter. Rappelons-en brièvement le principe \& les versions :
+AlphaGo utilise une variante du MCTS pour générer des parties en jouant contre lui-même,
+sauf qu'au lieu de jouer les parties en entier des ResNets sont utilisés pour l'évaluation \&
+la politique. L'apprentissage est initié à partir de parties téléchargées sur une base de données
+publique, et le jeu de données est augmenté en utilisant les syétries et rotations inhérentes au
+jeu. C'est cette version qui, avec des ajustements mineurs, bat Fan Hui 2p (AlphaGo), puis Lee Sedol 9p
+(AlphaGo Lee), \& Ke Jie 9p (AlphaGo Master), classé numéro 1 mondial à cette époque. 
+
+Alpha Zero vise à généraliser et simplifier AlphaGo Master, qui a démontré l'efficacité de la méthode.
+Une version intermédiaire, AlphaGo Zero, qui est testée sur Foxwq (le serveur de jeu de Go le plus peuplé,
+géré par Tencent) est la première étape vers Alpha Zero. Il fusionne les deux ResNets pour ne garder
+qu'un seul réseau multi-sorties ­ c'est là qu'il faut chercher l'énorme diminution du temps d'entraînement ­
+\& n'apprend qu'en jouant contre lui-même. Alpha Zero étant la version généralisée, l'augmentation du jeu
+de données par symétries \& rotations est abandonnée. Il n'y a pas d'autre ingrédient magique qu'une armée
+de TPUs et des hyper-paramètres judicieusements choisis par une méthode non publiée - mais les hyper-
+paramètres en question ont été publiés).
+
+\section{MCTS}
+\section{Représentation}
+\section{Architecture}
+\section{Conclusion}
+
+\end{document}
