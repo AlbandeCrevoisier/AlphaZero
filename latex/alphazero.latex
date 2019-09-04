@@ -11,13 +11,15 @@
 \maketitle
 
 \abstract{}
+
 Alpha Zero est la dernière itération des algorithmes publiés par DeepMind dans le domaine
 du jeu de Go. C'en est la généralisation aux jeux du même type (échecs, shogi, ...), ce qui
 est indiqué par la perte du « Go » dans le nom: l'itération précédente s'appelait AlphaGo Master.
-Les optimisations spécifiques au jeu de go ont également été abandonnées dans cette version,
+Les optimisations spécifiques au jeu de Go ont également été abandonnées dans cette version,
 ce qui ne l'empêche pas d'être plus performante qu'AlphaGo Master, aussi bien à l'entraînement
 qu'au jeu. L'algorithme lui-même n'a rien d'inédit, c'est une habile combinaison de techniques
 existant au préalable.
+
 
 \section{Introduction}
 
@@ -31,16 +33,34 @@ jeu. C'est cette version qui, avec des ajustements mineurs, bat Fan Hui 2p (Alph
 
 Alpha Zero vise à généraliser et simplifier AlphaGo Master, qui a démontré l'efficacité de la méthode.
 Une version intermédiaire, AlphaGo Zero, qui est testée sur Foxwq (le serveur de jeu de Go le plus peuplé,
-géré par Tencent) est la première étape vers Alpha Zero. Il fusionne les deux ResNets pour ne garder
+administré par Tencent) est la première étape vers Alpha Zero. Il fusionne les deux ResNets pour ne garder
 qu'un seul réseau multi-sorties ­ c'est là qu'il faut chercher l'énorme diminution du temps d'entraînement ­
 \& n'apprend qu'en jouant contre lui-même. Alpha Zero étant la version généralisée, l'augmentation du jeu
 de données par symétries \& rotations est abandonnée. Il n'y a pas d'autre ingrédient magique qu'une armée
 de TPUs et des hyper-paramètres judicieusements choisis par une méthode non publiée - mais les hyper-
-paramètres en question ont été publiés).
+paramètres eux-même ont été publiés.
+
 
 \section{MCTS}
+
+Alpha Zero utilise une version particulière du MCTS : le PUTC, Polynomial Upper Confidence Tree, une méthode
+publiée par des français de l'INRIA en 2013 qui généralise l'UCT à un espace d'actions et d'états infinis. C'est la
+méthode la plus aboutie en 2013-2015. Le noœud choisi après exploration est celui dont le score est le plus élevé :
+$$
+\textrm{moyenne empirique}(s, a) +
+\sqrt{
+  \frac
+    {\textrm{nombre de visites}(s)^{\textrm{coef d'exploration}}}
+    {\textrm{nombre de visites}(s, a)}}
+$$
+
 \section{Représentation}
+
+
 \section{Architecture}
+
+
 \section{Conclusion}
+
 
 \end{document}
