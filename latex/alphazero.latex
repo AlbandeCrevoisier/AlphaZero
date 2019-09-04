@@ -27,7 +27,7 @@ AlphaGo n'est plus à présenter. Rappelons-en brièvement le principe \& les ve
 AlphaGo utilise une variante du MCTS pour générer des parties en jouant contre lui-même,
 sauf qu'au lieu de jouer les parties en entier des ResNets sont utilisés pour l'évaluation \&
 la politique. L'apprentissage est initié à partir de parties téléchargées sur une base de données
-publique, et le jeu de données est augmenté en utilisant les syétries et rotations inhérentes au
+publique, et le jeu de données est augmenté en utilisant les symétries et rotations inhérentes au
 jeu. C'est cette version qui, avec des ajustements mineurs, bat Fan Hui 2p (AlphaGo), puis Lee Sedol 9p
 (AlphaGo Lee), \& Ke Jie 9p (AlphaGo Master), classé numéro 1 mondial à cette époque. 
 
@@ -43,6 +43,7 @@ paramètres eux-même ont été publiés.
 
 \section{MCTS}
 
+Depuis les travaux de Tristan Cazenave, tout le monde utilise diverses variantes du MCTS pour étudier le jeu de Go.
 Alpha Zero utilise une version particulière du MCTS : le PUTC, Polynomial Upper Confidence Tree, une méthode
 publiée par des français de l'INRIA en 2013 qui généralise l'UCT à un espace d'actions et d'états infinis. C'est la
 méthode la plus aboutie en 2013-2015. Le noœud choisi après exploration est celui dont le score est le plus élevé :
@@ -53,14 +54,118 @@ $$
     {\textrm{nombre de visites}(s)^{\textrm{coef d'exploration}}}
     {\textrm{nombre de visites}(s, a)}}
 $$
+Par ailleurs, à chaque itération les priors des nœuds sont bruités par la méthode de Dirichlet avec des paramètres
+judicieusement choisis.
+
 
 \section{Représentation}
+
+Chaque jeu (Go, shogi, échec, ...) se différencie principalement par son espace d'action et la représentation
+de la situation à évaluer.
+Dans le cas du jeu de Go, l'espace d'action est assez simplement défini, les joueurs ne pouvant effectuer que deux
+actions : poser une pierre sur le goban ou passer leur tour. Ansi, chaque action est simplement représentée par
+ses coordonnées plates (par exemple, 42 pour le coup en (2, 3) en notation python) ou alors par 361 pour passer.
+
+Une position à évaluer est représentée par une 17 cannaux d'une image de la taille du goban : un cannal pour la
+couleur (1 pour Noir, -1 pour Blanc), et $ 2 * 8 $ cannaux pour les 8 derniers coups de chaque joueur. Le Ko n'est
+pas représenté, contrairement à ce qui est fait dans les représentations classiques dans les moteurs de Go, puisque
+c'est le MCTS qui définit quels sont les coups légaux ou non.
+
+La valeur est donnée sous la forme de la probabilité de gagner pour Noir et se situe donc dans $(-1, 1)$ et la politique
+est donnée sous forme de logits.
 
 
 \section{Architecture}
 
+L'architecture est assez simple mais montre bien que l'équipe n'a pas trop de soucis de puissance de calcul :
+une `residual tower` commune sert d'entrée à la branche évaluant la valeur ainsi qu'à celle donnant la politique.
+\begin{description}
+  \item[`residual tower`] :
+    \begin{itemize}
+      \item 1 bloc convolutionnel
+      \item 19 blocs résiduels
+    \end{itemize}
+  \item[Politique] :
+    \begin{itemize}
+      \item 1 bloc convolutionnel
+      \item Flatten
+      \item Dense
+    \end{itemize}
+  \item[Valeur] :
+    \begin{itemize}
+      \item 1 bloc convolutionnel
+      \item Flatten
+      \item Dense
+      \item LeakyReLU
+      \item Dense(tanh)
+    \end{itemize}
+\end{description}
+
+Où les blocs sont :
+\begin{description}
+  \item[Convolutionnel] :
+    \begin{itemize}
+      \item Conv2D
+      \item BatchNormalization
+      \item LeakyReLU
+    \end{itemize}
+  \item[Résiduel] :
+    \begin{itemize}
+      \item 1 bloc convolutionnel
+      \item Conv2D
+      \item BatchNormalization
+      \item add(entrée, sortie du bloc convolutionnel)
+      \item LeakyReLU
+    \end{itemize}
+\end{description}
+
+La loss est la somme d'une L2 avec décroissance, l'erreur quadratique moyenne de la valeur \&
+un softmax sur l'entropie croisée. Rien d'inattendu, donc.
+
+
+\section{Parallélisme}
+
+Alpha Zero est hautement parallélisé pour bénéficier des nombreux TPUs mis à sa disposition.
+Un unique réseau de neurones est instancié et est entraîné en continu. Pour cela, des agents de
+self-play sont instanciés avec une copie des poids actuels du réseau, ils génèrent leur partie puis
+la retournent avec les logits de la politique et la valeur de chaque étape. Cela est mis dans un
+tampon à partir duquel des batchs sont réalisés en piochant des positions aléatoires dans des parties
+aléatoires. Il est un peu difficile d'imaginer comment la gestion de ce parallélisme est faite, puisque le
+réseau risque d'être entrainé avec des parties jouées par une version bien plus ancienne de ses poids
+si les contraintes de propagation et d'exécution ne sont pas strictement maintenus. On ne peut
+qu'imaginer le travail d'ingéniérie pour faire tourner ça sur quelques milliers de TPUs.
+
+
+\section{Notes d'implémentation}
+
+Pour simplifier l'implémentation, j'ai utilisé un moteur de Go existant, celui de minigo, une implémentation
+open source d'Alpha Zero - qui a depuis été plus ou moins abandonnée. L'intégration est bien primitive,
+et il me reste d'ailleurs un bug où certains coups de suicides sont joués durant le self-play - mais pas durant
+une partie normale... On notera par ailleurs que la question de la terminaison est non-triviale. J'ai implémenté
+mon propre moteur de Go en C suite à ce projet, et définir si un groupe est vivant ou non est assez compliqué.
+La seule solution stricte dont nous disposions est de jouer tous les coups jusqu'à ce qu'un groupe vive ou meurt,
+cependant en fonction des règles utilisées, cela peut changer le compte de la partie, et donc son issue. Sans parler
+de certaines situations de status quo - les seki - où une telle méthode risque de provoquer le suicide de l'un des
+joueurs. L'heuristique utilisée par minigo n'est pas si fiable que ça, et le score d'une partie est discutable.
+
+Au vu de la complexité induite par le parallélisme, je me suis également modestement cantonné à une
+implémentation mono-thread qui alterne self-play et entraînement. De toute façon, au vu de la puissance de
+calcul démesurée de mon brave thinkpad X201 de 2011, ça ne change pas grand chose.
+
+Ces détails exceptés, il m'a fallu réfléchir à comment adapter les paramètres d'exploration et de décroissance
+de la loss L2 à mes maigres ressources. Et là, pas de réponse : DeepMind n'a publié que les valeurs des hyper-
+paramètres qu'ils ont utilisées, pas la méthode pour les obtenir.
+
 
 \section{Conclusion}
 
+Frustrée par la non-publication du modèle entraîné, la communauté a développé Leela Zero, qui poursuit les
+travaux entamés par DeepMind. Diverses méthodes ont été utilisées pour chercher les hyper-paramètres et
+pour le MCTS. Par ailleurs, les optimisations propres au jeu de Go ont été utilisées à nouveau. Une version
+entraînée à un niveau largement suppérieurs à celui des top pros actuels est téléchargeable sous le nom
+de Lizzie. Il sert d'outil d'étude sur OGS (un serveur de Go) et tous les pros aussi bien que les amateurs
+l'utilisent et jouent ses coups. Les parties pros ont totalement pris le pli depuis près d'un an désormais et
+toute la jeune génération joue le style IA. S'il est regrettable que DeepMind n'aie pas publié une version
+entraînée, la communauté a rempli ce vide et les IA se sont désormais démocratisées.
 
 \end{document}
